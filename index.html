@@ -132,10 +132,16 @@
             <button onclick="addTask()">Add</button>
         </div>
         <ul id="taskList"></ul>
-        <audio id="reminderSound" src="beep-beep-beep-beep-80262.mp3" preload="auto"></audio>
+        <audio id="reminderSound" src="be" preload="auto"></audio>
     </div>
 
     <script>
+        // Load tasks from localStorage on page load
+        window.onload = function() {
+            loadTasks();
+            displayDate();
+        }
+
         function addTask() {
             let taskInput = document.getElementById("taskInput");
             let taskText = taskInput.value.trim();
@@ -154,31 +160,68 @@
             taskInput.value = "";
             document.getElementById("taskTime").value = "";
             
+            // Save the task to localStorage
+            saveTasks();
+
             if (taskTime) setReminder(li, taskText, taskTime);
         }
         
         function removeTask(button) {
             button.closest("li").remove();
+            saveTasks(); // Save after removing a task
         }
         
         function toggleTask(checkbox) {
             let taskText = checkbox.nextElementSibling;
             taskText.classList.toggle("completed", checkbox.checked);
+            saveTasks(); // Save after checking/unchecking a task
         }
-        
+
+        function saveTasks() {
+            let tasks = [];
+            let taskList = document.getElementById("taskList");
+            let taskItems = taskList.querySelectorAll("li");
+
+            taskItems.forEach(item => {
+                let taskText = item.querySelector(".task-text").textContent;
+                let taskTime = item.querySelector(".task-text").textContent.includes("at") ? item.querySelector(".task-text").textContent.split("at ")[1] : "";
+                let isCompleted = item.querySelector("input[type='checkbox']").checked;
+                tasks.push({ taskText, taskTime, isCompleted });
+            });
+
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+
+        function loadTasks() {
+            let tasks = JSON.parse(localStorage.getItem("tasks"));
+            if (tasks) {
+                tasks.forEach(task => {
+                    let li = document.createElement("li");
+                    li.innerHTML = `
+                        <input type='checkbox' onclick='toggleTask(this)' ${task.isCompleted ? "checked" : ""}> 
+                        <span class="task-text">${task.taskText} ${task.taskTime ? "at " + task.taskTime : ""}</span> 
+                        <span class="menu" onclick="toggleMenu(this)">&#8942;</span>
+                        <div class="dropdown">
+                            <button onclick="removeTask(this)">Delete</button>
+                        </div>`;
+                    document.getElementById("taskList").appendChild(li);
+                });
+            }
+        }
+
         function handleKeyPress(event) {
             if (event.key === "Enter") {
                 addTask();
             }
         }
-        
+
         function formatTime(timeStr) {
             let [hour, minute] = timeStr.split(":");
             let period = hour >= 12 ? "PM" : "AM";
             hour = hour % 12 || 12;
             return `${hour}:${minute} ${period}`;
         }
-        
+
         function setReminder(taskElement, task, time) {
             let now = new Date();
             let [hour, minute] = time.split(":").map(Number);
@@ -196,18 +239,17 @@
                 }, timeDifference);
             }
         }
-        
+
         function toggleMenu(menu) {
             let dropdown = menu.nextElementSibling;
             dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
         }
-        
+
         function displayDate() {
             let today = new Date().toDateString();
             document.getElementById("dateDisplay").innerText = today;
         }
-        
-        displayDate();
+
     </script>
 </body>
 </html>
