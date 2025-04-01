@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 400px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px #0ff;
+            overflow: hidden;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        #dateDisplay {
+            text-align: right;
+            font-size: 14px;
+            color: #0ff;
+        }
+        .task-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="text"], input[type="time"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background: #333;
+            color: #fff;
+        }
+        button {
+            cursor: pointer;
+            background: #0ff;
+            color: black;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        li {
+            background: #222;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 5px;
+            position: relative;
+        }
+        .task-text {
+            flex: 1;
+            text-align: left;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: grey;
+        }
+        .menu {
+            cursor: pointer;
+            font-size: 20px;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 40px;
+            background: #333;
+            border-radius: 5px;
+            padding: 5px 0;
+            box-shadow: 0 0 10px #0ff;
+        }
+        .dropdown button {
+            display: block;
+            width: 100%;
+            background: none;
+            padding: 8px;
+            text-align: left;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+                max-width: 95%;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            .task-container {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="dateDisplay"></div>
+        <h2>To-Do List</h2>
+        <div class="task-container">
+            <input type="text" id="taskInput" placeholder="Enter a task" onkeypress="handleKeyPress(event)">
+            <input type="time" id="taskTime">
+            <button onclick="addTask()">Add</button>
+        </div>
+        <ul id="taskList"></ul>
+        <audio id="reminderSound" src="beep-beep-beep-beep-80262.mp3" preload="auto"></audio>
+    </div>
+
+    <script>
+        function addTask() {
+            let taskInput = document.getElementById("taskInput");
+            let taskText = taskInput.value.trim();
+            let taskTime = document.getElementById("taskTime").value;
+            if (taskText === "") return;
+            
+            let li = document.createElement("li");
+            li.innerHTML = `
+                <input type='checkbox' onclick='toggleTask(this)'> 
+                <span class="task-text">${taskText} ${taskTime ? "at " + formatTime(taskTime) : ""}</span> 
+                <span class="menu" onclick="toggleMenu(this)">&#8942;</span>
+                <div class="dropdown">
+                    <button onclick="removeTask(this)">Delete</button>
+                </div>`;
+            document.getElementById("taskList").appendChild(li);
+            taskInput.value = "";
+            document.getElementById("taskTime").value = "";
+            
+            if (taskTime) setReminder(li, taskText, taskTime);
+        }
+        
+        function removeTask(button) {
+            button.closest("li").remove();
+        }
+        
+        function toggleTask(checkbox) {
+            let taskText = checkbox.nextElementSibling;
+            taskText.classList.toggle("completed", checkbox.checked);
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                addTask();
+            }
+        }
+        
+        function formatTime(timeStr) {
+            let [hour, minute] = timeStr.split(":");
+            let period = hour >= 12 ? "PM" : "AM";
+            hour = hour % 12 || 12;
+            return `${hour}:${minute} ${period}`;
+        }
+        
+        function setReminder(taskElement, task, time) {
+            let now = new Date();
+            let [hour, minute] = time.split(":").map(Number);
+            let reminderTime = new Date();
+            reminderTime.setHours(hour, minute, 0, 0);
+            
+            let timeDifference = reminderTime - now;
+            if (timeDifference > 0) {
+                setTimeout(() => {
+                    let checkbox = taskElement.querySelector("input[type='checkbox']");
+                    if (!checkbox.checked) {
+                        document.getElementById("reminderSound").play();
+                        alert(`Reminder: ${task}`);
+                    }
+                }, timeDifference);
+            }
+        }
+        
+        function toggleMenu(menu) {
+            let dropdown = menu.nextElementSibling;
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+        
+        function displayDate() {
+            let today = new Date().toDateString();
+            document.getElementById("dateDisplay").innerText = today;
+        }
+        
+        displayDate();
+    </script>
+</body>
+</html>
